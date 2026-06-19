@@ -1,271 +1,291 @@
-let sounds = [];
-let currentScene = 'all';
-let masterVolume = 0.85;
-let playingAudios = new Map(); // track id -> audio element
+let playlist = [];
+let currentTrackIndex = -1;
+let isPlaying = false;
 
-const soundGrid = document.getElementById('sound-grid');
-const sceneList = document.getElementById('scene-list');
-const activeSceneName = document.getElementById('active-scene-name');
-const statusEl = document.getElementById('status');
-const masterVolumeSlider = document.getElementById('master-volume');
+let audio1 = document.getElementById('audio-player-1');
+let audio2 = document.getElementById('audio-player-2');
+let currentAudio = audio1;        // Currently playing audio
+let nextAudio = audio2;           // Audio used for next track
+
+const playlistEl = document.getElementById('playlist');
+const trackTitleEl = document.getElementById('track-title');
+const trackArtistEl = document.getElementById('track-artist');
+const albumArtContainer = document.getElementById('album-art-container');
+const progressBar = document.getElementById('progress-bar');
+const progressThumb = document.getElementById('progress-thumb');
+const progressContainer = document.getElementById('progress-container');
+const currentTimeEl = document.getElementById('current-time');
+const durationEl = document.getElementById('duration');
+const playIcon = document.getElementById('play-icon');
+const volumeSlider = document.getElementById('volume-slider');
+const trackCountEl = document.getElementById('track-count');
 const searchInput = document.getElementById('search-input');
 
-const predefinedScenes = [
-    'All Sounds',
-    'Act 1',
-    'Act 2',
-    'Act 3',
-    'Effects',
-    'Ambience',
-    'Music Cues',
-    'Transitions'
-];
+let isDragging = false;
+let fadeInterval = null;
+const CROSSFADE_DURATION = 1800; // milliseconds (1.8 seconds)
 
 // Load from localStorage
-function loadSounds() {
-    const saved = localStorage.getItem('clsf_soundboard');
+function loadLibrary() {
+    const saved = localStorage.getItem('vibevault_library');
     if (saved) {
-        sounds = JSON.parse(saved);
+        playlist = JSON.parse(saved);
+        renderPlaylist();
     }
-    renderScenes();
-    renderSoundGrid();
 }
 
-function saveSounds() {
-    localStorage.setItem('clsf_soundboard', JSON.stringify(sounds));
+function saveLibrary() {
+    localStorage.setItem('vibevault_library', JSON.stringify(playlist));
 }
 
-function renderScenes() {
-    sceneList.innerHTML = '';
+function renderPlaylist(filteredPlaylist = playlist) {
+    playlistEl.innerHTML = '';
     
-    predefinedScenes.forEach(scene => {
-        const sceneKey = scene.toLowerCase().replace(/\s+/g, '-');
-        const el = document.createElement('div');
-        el.className = `scene-item px-5 py-3 rounded-2xl cursor-pointer flex items-center gap-3 text-sm font-medium ${currentScene === sceneKey ? 'active' : 'hover:bg-zinc-800'}`;
-        el.innerHTML = `
-            <i class="fa-solid ${scene === 'All Sounds' ? 'fa-layer-group' : 'fa-theater-masks'}"></i>
-            <span>${scene}</span>
-        `;
-        el.onclick = () => {
-            currentScene = sceneKey;
-            activeSceneName.textContent = scene;
-            renderScenes();
-            renderSoundGrid();
-        };
-        sceneList.appendChild(el);
-    });
-}
-
-function getSceneForSound(sound) {
-    return sound.scene || 'all';
-}
-
-function renderSoundGrid(filteredSounds = null) {
-    soundGrid.innerHTML = '';
-    soundGrid.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4';
-
-    const toRender = filteredSounds || sounds.filter(s => {
-        if (currentScene === 'all') return true;
-        return getSceneForSound(s) === currentScene;
-    });
-
-    if (toRender.length === 0) {
-        soundGrid.innerHTML = `
-            <div class="col-span-full flex flex-col items-center justify-center h-96 text-zinc-500">
-                <i class="fa-solid fa-music text-7xl mb-6 opacity-20"></i>
-                <p class="text-xl">No sounds in this scene yet</p>
-                <p class="text-sm mt-2">Upload audio files and assign them to scenes</p>
+    if (filteredPlaylist.length === 0) {
+        playlistEl.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-64 text-zinc-500">
+                <i class="fa-solid fa-music text-5xl mb-4 opacity-30"></i>
+                <p class="text-sm">Your library is empty</p>
+                <p class="text-xs mt-1">Upload MP3 files to begin</p>
             </div>
         `;
         return;
     }
-
-    toRender.forEach((sound, idx) => {
-        const globalIdx = sounds.findIndex(s => s.id === sound.id);
-        const btn = document.createElement('button');
-        btn.className = `sound-btn group bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 rounded-3xl p-6 text-left h-full flex flex-col justify-between`;
+    
+    filteredPlaylist.forEach((track) => {
+        const originalIndex = playlist.findIndex(t => t.name === track.name);
+        const trackEl = document.createElement('div');
+        trackEl.className = `track-item px-4 py-3 rounded-2xl flex items-center gap-4 cursor-pointer ${originalIndex === currentTrackIndex ? 'active-track' : ''}`;
         
-        const isPlaying = playingAudios.has(sound.id);
-        
-        btn.innerHTML = `
-            <div>
-                <div class="flex justify-between items-start mb-4">
-                    <div class="w-12 h-12 bg-zinc-800 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                        🎵
-                    </div>
-                    ${isPlaying ? `<span class="px-3 py-1 text-xs bg-amber-500 text-zinc-950 rounded-full font-medium animate-pulse">PLAYING</span>` : ''}
-                </div>
-                <h3 class="font-semibold text-lg leading-tight mb-1 line-clamp-2">${sound.name}</h3>
-                <p class="text-xs text-zinc-500">${sound.scene ? sound.scene.replace('-', ' ').toUpperCase() : 'GENERAL'}</p>
+        trackEl.innerHTML = `
+            <div class="w-10 h-10 bg-zinc-700 rounded-xl flex-shrink-0 flex items-center justify-center">
+                <i class="fa-solid fa-music text-yellow-400"></i>
             </div>
-            
-            <div class="flex items-center justify-between mt-6">
-                <button onclick="event.stopImmediatePropagation(); toggleSound(${globalIdx});" 
-                        class="w-11 h-11 rounded-2xl bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 flex items-center justify-center text-xl transition-all">
-                    <i class="fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'}"></i>
-                </button>
-                <button onclick="event.stopImmediatePropagation(); deleteSound(${globalIdx});" 
-                        class="text-zinc-500 hover:text-red-400 text-xl">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
+            <div class="flex-1 min-w-0">
+                <p class="font-medium truncate">${track.name}</p>
+                <p class="text-xs text-zinc-500 truncate">${track.artist || 'Unknown Artist'}</p>
             </div>
+            <div class="text-xs text-zinc-500">${formatTime(track.duration || 0)}</div>
         `;
         
-        btn.onclick = () => toggleSound(globalIdx);
-        soundGrid.appendChild(btn);
+        trackEl.onclick = () => playTrack(originalIndex);
+        playlistEl.appendChild(trackEl);
     });
-
-    statusEl.textContent = `${sounds.length} sounds loaded • ${toRender.length} shown`;
-}
-
-function toggleSound(index) {
-    const sound = sounds[index];
-    if (!sound) return;
-
-    if (playingAudios.has(sound.id)) {
-        // Stop this sound
-        const audio = playingAudios.get(sound.id);
-        audio.pause();
-        playingAudios.delete(sound.id);
-    } else {
-        // Play this sound
-        const audio = new Audio(sound.url);
-        audio.volume = masterVolume;
-        
-        audio.onended = () => {
-            playingAudios.delete(sound.id);
-            renderSoundGrid();
-        };
-        
-        audio.play().catch(err => console.error(err));
-        playingAudios.set(sound.id, audio);
-    }
     
-    renderSoundGrid();
+    trackCountEl.textContent = `${playlist.length} track${playlist.length === 1 ? '' : 's'}`;
 }
 
-function stopAllSounds() {
-    playingAudios.forEach(audio => {
-        audio.pause();
-    });
-    playingAudios.clear();
-    renderSoundGrid();
+function formatTime(seconds) {
+    if (!seconds) return "0:00";
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
 }
 
-function deleteSound(index) {
-    if (!confirm('Delete this sound?')) return;
-    
-    const sound = sounds[index];
-    if (playingAudios.has(sound.id)) {
-        playingAudios.get(sound.id).pause();
-        playingAudios.delete(sound.id);
-    }
-    
-    URL.revokeObjectURL(sound.url);
-    sounds.splice(index, 1);
-    saveSounds();
-    renderSoundGrid();
-}
-
-function clearAll() {
-    if (!confirm('Clear ALL sounds from the soundboard?')) return;
-    stopAllSounds();
-    sounds.forEach(s => URL.revokeObjectURL(s.url));
-    sounds = [];
-    saveSounds();
-    renderSoundGrid();
-}
-
-// Upload handler
+// Upload files
 document.getElementById('file-input').addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
-    
     files.forEach(file => {
-        if (file.type.startsWith('audio/')) {
+        if (file.type === 'audio/mpeg' || file.name.toLowerCase().endsWith('.mp3')) {
             const url = URL.createObjectURL(file);
-            const scene = currentScene === 'all' ? 'act-1' : currentScene;
-            
-            sounds.push({
-                id: 'sound-' + Date.now() + Math.random().toString(36).substr(2, 5),
-                name: file.name.replace(/\.(mp3|wav|mpeg)$/i, ''),
+            playlist.push({
+                name: file.name.replace(/\.(mp3|MP3)$/, ''),
                 url: url,
-                scene: scene,
+                artist: 'Local File',
                 duration: 0
             });
         }
     });
     
-    saveSounds();
-    renderSoundGrid();
+    saveLibrary();
+    renderPlaylist();
+    
+    if (currentTrackIndex === -1 && playlist.length > 0) {
+        playTrack(0);
+    }
 });
 
-function filterSounds() {
-    const term = searchInput.value.toLowerCase().trim();
-    if (!term) {
-        renderSoundGrid();
+function playTrack(index) {
+    if (index < 0 || index >= playlist.length) return;
+    
+    const track = playlist[index];
+    currentTrackIndex = index;
+    
+    // Switch active audio references
+    const oldAudio = currentAudio;
+    currentAudio = nextAudio;
+    nextAudio = oldAudio;
+    
+    // Load next track
+    currentAudio.src = track.url;
+    currentAudio.volume = 0; // Start faded out
+    
+    trackTitleEl.textContent = track.name;
+    trackArtistEl.textContent = track.artist;
+    
+    // Start crossfade
+    crossfadeToNewTrack();
+    
+    renderPlaylist();
+}
+
+function crossfadeToNewTrack() {
+    if (fadeInterval) clearInterval(fadeInterval);
+    
+    const startTime = Date.now();
+    const oldAudio = nextAudio; // The one that was previously playing
+    
+    currentAudio.play().then(() => {
+        isPlaying = true;
+        playIcon.classList.replace('fa-play', 'fa-pause');
+        albumArtContainer.classList.add('playing');
+        
+        fadeInterval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / CROSSFADE_DURATION, 1);
+            
+            // Fade in new track
+            currentAudio.volume = progress * volumeSlider.value;
+            
+            // Fade out old track
+            if (oldAudio && !oldAudio.paused) {
+                oldAudio.volume = (1 - progress) * volumeSlider.value;
+            }
+            
+            if (progress >= 1) {
+                clearInterval(fadeInterval);
+                if (oldAudio) {
+                    oldAudio.pause();
+                    oldAudio.volume = 0;
+                }
+            }
+        }, 16);
+    }).catch(err => console.error(err));
+}
+
+function togglePlay() {
+    if (currentTrackIndex === -1) {
+        if (playlist.length > 0) playTrack(0);
         return;
     }
     
-    const filtered = sounds.filter(sound => 
-        sound.name.toLowerCase().includes(term)
-    );
-    renderSoundGrid(filtered);
+    if (isPlaying) {
+        currentAudio.pause();
+        playIcon.classList.replace('fa-pause', 'fa-play');
+        albumArtContainer.classList.remove('playing');
+    } else {
+        currentAudio.play();
+        playIcon.classList.replace('fa-play', 'fa-pause');
+        albumArtContainer.classList.add('playing');
+    }
+    isPlaying = !isPlaying;
 }
 
-// Master Volume
-masterVolumeSlider.addEventListener('input', () => {
-    masterVolume = parseFloat(masterVolumeSlider.value);
-    playingAudios.forEach(audio => {
-        audio.volume = masterVolume;
-    });
+function nextTrack() {
+    if (playlist.length === 0) return;
+    let next = currentTrackIndex + 1;
+    if (next >= playlist.length) next = 0;
+    playTrack(next);
+}
+
+function prevTrack() {
+    if (playlist.length === 0) return;
+    let prev = currentTrackIndex - 1;
+    if (prev < 0) prev = playlist.length - 1;
+    playTrack(prev);
+}
+
+// Progress handling (only track currentAudio)
+function updateProgress() {
+    if (!currentAudio.duration || isDragging) return;
+    
+    const progress = (currentAudio.currentTime / currentAudio.duration) * 100;
+    progressBar.style.width = `${progress}%`;
+    progressThumb.style.left = `${progress}%`;
+    
+    currentTimeEl.textContent = formatTime(currentAudio.currentTime);
+    durationEl.textContent = formatTime(currentAudio.duration);
+}
+
+currentAudio.addEventListener('timeupdate', updateProgress);
+audio1.addEventListener('timeupdate', () => { if (currentAudio === audio1) updateProgress(); });
+audio2.addEventListener('timeupdate', () => { if (currentAudio === audio2) updateProgress(); });
+
+currentAudio.addEventListener('ended', () => {
+    nextTrack();
 });
 
-// Modal functions
-function showLibraryModal() {
-    const modal = document.getElementById('library-modal');
-    const content = document.getElementById('library-content');
-    
-    let html = `<div class="space-y-4">`;
-    
-    sounds.forEach((sound, i) => {
-        html += `
-            <div class="flex items-center justify-between bg-zinc-800 p-4 rounded-2xl">
-                <div>
-                    <div class="font-medium">${sound.name}</div>
-                    <div class="text-xs text-zinc-500">${sound.scene ? sound.scene.replace('-',' ').toUpperCase() : ''}</div>
-                </div>
-                <button onclick="deleteSound(${i}); hideLibraryModal();" 
-                        class="px-4 py-2 text-red-400 hover:bg-red-900/30 rounded-2xl text-sm">
-                    Delete
-                </button>
-            </div>`;
-    });
-    
-    html += `</div>`;
-    content.innerHTML = html || `<p class="text-zinc-500 text-center py-12">No sounds yet. Add some using the upload button.</p>`;
-    
-    modal.classList.remove('hidden');
+currentAudio.addEventListener('loadedmetadata', () => {
+    if (playlist[currentTrackIndex]) {
+        playlist[currentTrackIndex].duration = currentAudio.duration;
+        renderPlaylist();
+    }
+});
+
+// Seek (affects current audio)
+function seek(e) {
+    if (currentTrackIndex === -1) return;
+    const rect = progressContainer.getBoundingClientRect();
+    let pos = (e.clientX - rect.left) / rect.width;
+    pos = Math.max(0, Math.min(1, pos));
+    currentAudio.currentTime = pos * currentAudio.duration;
 }
 
-function hideLibraryModal() {
-    document.getElementById('library-modal').classList.add('hidden');
+// Drag support
+progressContainer.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    seek(e);
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isDragging) seek(e);
+});
+
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+});
+
+// Volume control
+volumeSlider.addEventListener('input', () => {
+    if (currentAudio) currentAudio.volume = volumeSlider.value;
+});
+
+// Filter & Clear
+function filterPlaylist() {
+    const term = searchInput.value.toLowerCase().trim();
+    if (!term) {
+        renderPlaylist();
+        return;
+    }
+    const filtered = playlist.filter(track => track.name.toLowerCase().includes(term));
+    renderPlaylist(filtered);
+}
+
+function clearLibrary() {
+    if (confirm("Clear entire library?")) {
+        playlist = [];
+        currentTrackIndex = -1;
+        audio1.pause(); audio2.pause();
+        audio1.src = ''; audio2.src = '';
+        localStorage.removeItem('vibevault_library');
+        renderPlaylist();
+        trackTitleEl.textContent = "No track selected";
+        trackArtistEl.textContent = "Upload some music to get started";
+        playIcon.classList.replace('fa-pause', 'fa-play');
+        albumArtContainer.classList.remove('playing');
+    }
 }
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        e.preventDefault();
-        // Could implement global play/pause logic if desired
-    }
-    if (e.key === 'Escape') {
-        const modal = document.getElementById('library-modal');
-        if (!modal.classList.contains('hidden')) hideLibraryModal();
-    }
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    if (e.code === 'ArrowRight') nextTrack();
+    if (e.code === 'ArrowLeft') prevTrack();
 });
 
 function init() {
-    loadSounds();
-    console.log('%cCLSF Soundboard initialized • Professional mode', 'color: #f59e0b; font-size: 13px; font-family: monospace');
+    loadLibrary();
+    console.log('%cVibeVault with Crossfade ready 🎵', 'color: #eab308; font-size: 13px; font-family: monospace');
 }
 
 window.onload = init;
