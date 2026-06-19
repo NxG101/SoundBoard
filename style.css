@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+
+:root {
+    --primary: 234 179 8;
+}
+
+body {
+    font-family: 'Inter', system_ui, sans-serif;
+}
+
+.title-font {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.album-art {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.playing .album-art {
+    animation: rotate 25s linear infinite;
+    box-shadow: 0 0 60px -10px rgb(234 179 8);
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.track-item {
+    transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.track-item:hover {
+    background-color: #1f2937;
+    transform: translateX(8px);
+}
+
+.active-track {
+    background-color: #374151;
+    border-left: 4px solid rgb(234 179 8);
+}
+
+/* Improved Progress Bar */
+.progress-container {
+    height: 6px;
+    background: #4b5563;
+    border-radius: 9999px;
+    position: relative;
+    transition: height 0.2s ease;
+}
+
+.progress-container:hover {
+    height: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, rgb(234 179 8), #facc15);
+    border-radius: 9999px;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 12px rgb(234 179 8 / 0.6);
+}
+
+.progress-thumb {
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 3px solid rgb(234 179 8);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    border-radius: 50%;
+    top: -5px;
+    transform: translateX(-50%);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    opacity: 0;
+}
+
+.progress-container:hover .progress-thumb {
+    opacity: 1;
+}
+
+/* Custom Scrollbar */
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 20px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: #eab308;
+}
+
+/* Fade transition for audio */
+#audio-player {
+    transition: opacity 0.6s ease-in-out;
+}
