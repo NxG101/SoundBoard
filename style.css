@@ -55,4 +55,58 @@ body {
     color: rgb(245 158 11);
 }
 
-/* Tailwind script already included */
+/* Modals */
+#sound-editor-modal, #scene-manager-modal, #library-modal {
+    animation: fadeInModal 0.2s ease forwards;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Drag & Drop Feedback */
+.scene-item.dragover,
+.sound-btn.dragover {
+    background-color: rgb(245 158 11 / 0.25) !important;
+    border-color: rgb(245 158 11);
+    transform: scale(1.02);
+}
+
+/* Range inputs */
+input[type="range"] {
+    accent-color: rgb(245 158 11);
+}
+
+/* Editor specific */
+#editor-content input,
+#editor-content select {
+    transition: all 0.2s;
+}
+
+#editor-content input:focus,
+#editor-content select:focus {
+    border-color: rgb(245 158 11);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+/* Footer status */
+#status {
+    font-family: monospace;
+}
+
+/* Make grid items look better */
+.sound-btn {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Library & Modals */
+#library-content div {
+    transition: all 0.15s ease;
+}
+
+#library-content div:hover {
+    background-color: rgb(245 158 11 / 0.1);
+}
