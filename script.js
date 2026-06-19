@@ -118,30 +118,79 @@ function renderSoundGrid(filteredSounds = null) {
     statusEl.textContent = `${sounds.length} sounds loaded • ${toRender.length} shown`;
 }
 
+// === REPLACE THIS FUNCTION ===
 function toggleSound(index) {
     const sound = sounds[index];
     if (!sound) return;
 
     if (playingAudios.has(sound.id)) {
-        // Stop this sound
+        // === PAUSE WITH FADE OUT ===
         const audio = playingAudios.get(sound.id);
-        audio.pause();
-        playingAudios.delete(sound.id);
+        fadeOut(audio, 1200, () => {
+            audio.pause();
+            playingAudios.delete(sound.id);
+            renderSoundGrid();
+        });
     } else {
-        // Play this sound
+        // === PLAY WITH FADE IN ===
         const audio = new Audio(sound.url);
-        audio.volume = masterVolume;
-        
+        audio.volume = 0;                    // Start silent
+        audio.loop = false;
+
         audio.onended = () => {
             playingAudios.delete(sound.id);
             renderSoundGrid();
         };
-        
-        audio.play().catch(err => console.error(err));
+
         playingAudios.set(sound.id, audio);
+
+        audio.play().then(() => {
+            fadeIn(audio, 1000, masterVolume);
+            renderSoundGrid();
+        }).catch(err => {
+            console.error("Playback failed:", err);
+            playingAudios.delete(sound.id);
+        });
     }
-    
-    renderSoundGrid();
+}
+
+// Fade Out
+function fadeOut(audio, duration = 1200, callback = null) {
+    if (!audio) return;
+    const startVolume = audio.volume;
+    const startTime = Date.now();
+
+    const interval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        audio.volume = startVolume * (1 - progress);
+
+        if (progress >= 1) {
+            clearInterval(interval);
+            audio.volume = 0;
+            if (callback) callback();
+        }
+    }, 16);
+}
+
+// Fade In
+function fadeIn(audio, duration = 1000, targetVolume = 0.85) {
+    if (!audio) return;
+    audio.volume = 0;
+    const startTime = Date.now();
+
+    const interval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        audio.volume = targetVolume * progress;
+
+        if (progress >= 1) {
+            clearInterval(interval);
+            audio.volume = targetVolume;
+        }
+    }, 16);
 }
 
 function stopAllSounds() {
@@ -216,7 +265,10 @@ function filterSounds() {
 masterVolumeSlider.addEventListener('input', () => {
     masterVolume = parseFloat(masterVolumeSlider.value);
     playingAudios.forEach(audio => {
-        audio.volume = masterVolume;
+        // Only set volume if not currently fading
+        if (!audio.dataset.fading) {
+            audio.volume = masterVolume;
+        }
     });
 });
 
@@ -269,3 +321,41 @@ function init() {
 }
 
 window.onload = init;
+
+let currentPlayingIndex = -1; // Track the last toggled sound for Next/Prev
+
+function getCurrentFilteredSounds() {
+    if (!searchInput.value.trim()) {
+        return sounds.filter(s => {
+            if (currentScene === 'all') return true;
+            return getSceneForSound(s) === currentScene;
+        });
+    }
+    return sounds.filter(sound => 
+        sound.name.toLowerCase().includes(searchInput.value.toLowerCase().trim())
+    );
+}
+
+function nextSound() {
+    const filtered = getCurrentFilteredSounds();
+    if (filtered.length === 0) return;
+
+    const currentGlobalIndices = filtered.map(s => sounds.findIndex(sound => sound.id === s.id));
+    let nextIdx = currentGlobalIndices.indexOf(currentPlayingIndex) + 1;
+    if (nextIdx >= currentGlobalIndices.length) nextIdx = 0;
+
+    currentPlayingIndex = currentGlobalIndices[nextIdx];
+    toggleSound(currentPlayingIndex);
+}
+
+function prevSound() {
+    const filtered = getCurrentFilteredSounds();
+    if (filtered.length === 0) return;
+
+    const currentGlobalIndices = filtered.map(s => sounds.findIndex(sound => sound.id === s.id));
+    let prevIdx = currentGlobalIndices.indexOf(currentPlayingIndex) - 1;
+    if (prevIdx < 0) prevIdx = currentGlobalIndices.length - 1;
+
+    currentPlayingIndex = currentGlobalIndices[prevIdx];
+    toggleSound(currentPlayingIndex);
+}
