@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLSF Soundboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen overflow-hidden">
+    <div class="flex h-screen">
+        <!-- Sidebar: Scenes / Categories -->
+        <div class="w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col">
+            <div class="p-6 border-b border-zinc-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 bg-amber-500 rounded-2xl flex items-center justify-center text-zinc-950 text-3xl font-bold shadow-inner">C</div>
+                    <div>
+                        <h1 class="text-3xl font-semibold tracking-tighter title-font">CLSF</h1>
+                        <p class="text-amber-400 text-sm -mt-1">SOUNDBOARD</p>
+                    </div>
+                </div>
+                <p class="text-zinc-500 text-xs mt-4">Professional Audio Control</p>
+            </div>
+
+            <div class="p-4">
+                <div class="text-xs uppercase tracking-widest text-zinc-500 mb-3 px-3">Scenes</div>
+                <div id="scene-list" class="space-y-1"></div>
+            </div>
+
+            <div class="mt-auto p-4 border-t border-zinc-800">
+                <label id="upload-btn"
+                       class="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 px-6 py-3.5 rounded-3xl font-semibold cursor-pointer transition-all active:scale-95">
+                    <i class="fa-solid fa-upload"></i>
+                    <span>Add Sound</span>
+                    <input type="file" id="file-input" multiple accept="audio/mp3,audio/mpeg,audio/wav" class="hidden">
+                </label>
+                
+                <button onclick="clearAll()" 
+                        class="w-full mt-3 flex items-center justify-center gap-2 bg-zinc-800 hover:bg-red-900/30 hover:text-red-400 px-4 py-3 rounded-3xl text-sm transition-colors">
+                    <i class="fa-solid fa-trash"></i>
+                    <span>Clear All Sounds</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Top Bar -->
+            <div class="h-16 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-lg flex items-center justify-between px-8 z-10">
+                <div class="flex items-center gap-8">
+                    <div id="current-scene-display" class="flex items-center gap-3">
+                        <span class="text-amber-400">
+                            <i class="fa-solid fa-theater-masks"></i>
+                        </span>
+                        <span id="active-scene-name" class="font-semibold text-xl">All Sounds</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-3 bg-zinc-800 rounded-3xl px-4 py-1.5">
+                        <i class="fa-solid fa-volume-high text-zinc-400"></i>
+                        <input type="range" id="master-volume" 
+                               min="0" max="1" step="0.01" value="0.85"
+                               class="w-36 accent-amber-500">
+                    </div>
+
+                    <button onclick="stopAllSounds()" 
+                            class="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-5 py-2 rounded-3xl text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-stop"></i>
+                        <span>STOP ALL</span>
+                    </button>
+
+                    <div class="text-xs text-zinc-500 flex items-center gap-2">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        LIVE
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sound Grid -->
+            <div class="flex-1 p-8 overflow-auto" id="sound-grid">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Footer Status -->
+            <div class="h-14 border-t border-zinc-800 bg-zinc-900 px-8 flex items-center justify-between text-xs text-zinc-500">
+                <div id="status" class="flex items-center gap-2">
+                    <span>Ready • 0 sounds loaded</span>
+                </div>
+                <div class="flex items-center gap-6">
+                    <input id="search-input" 
+                           type="text" 
+                           placeholder="Search sounds..." 
+                           onkeyup="filterSounds()"
+                           class="bg-zinc-800 border border-zinc-700 focus:border-amber-500 rounded-3xl py-2 px-6 text-sm w-80 focus:outline-none">
+                    <div onclick="showLibraryModal()" class="cursor-pointer hover:text-amber-400 transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-list"></i>
+                        <span>Library</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Library Modal -->
+    <div id="library-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-zinc-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-zinc-700 flex items-center justify-between">
+                <h2 class="text-2xl font-semibold">Sound Library</h2>
+                <button onclick="hideLibraryModal()" class="text-3xl leading-none hover:text-amber-400">×</button>
+            </div>
+            <div class="flex-1 overflow-auto p-6" id="library-content">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <audio id="global-audio" class="hidden"></audio>
+    <script src="script.js"></script>
+</body>
+</html>
