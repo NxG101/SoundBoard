@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 :root {
-    --primary: 234 179 8;
+    --primary: 245 158 11;
 }
 
 body {
@@ -12,85 +12,47 @@ body {
     font-family: 'Space Grotesk', sans-serif;
 }
 
-.album-art {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.playing .album-art {
-    animation: rotate 25s linear infinite;
-    box-shadow: 0 0 60px -10px rgb(234 179 8);
-}
-
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.track-item {
+/* Sound Button */
+.sound-btn {
     transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-}
-
-.track-item:hover {
-    background-color: #1f2937;
-    transform: translateX(8px);
-}
-
-.active-track {
-    background-color: #374151;
-    border-left: 4px solid rgb(234 179 8);
-}
-
-/* Improved Progress Bar */
-.progress-container {
-    height: 6px;
-    background: #4b5563;
-    border-radius: 9999px;
     position: relative;
-    transition: height 0.2s ease;
+    overflow: hidden;
 }
 
-.progress-container:hover {
-    height: 10px;
+.sound-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, transparent, rgba(245, 158, 11, 0.15), transparent);
+    transform: translateX(-150%);
+    transition: transform 0.6s;
 }
 
-.progress-bar {
-    height: 100%;
-    background: linear-gradient(to right, rgb(234 179 8), #facc15);
-    border-radius: 9999px;
-    transition: width 0.1s linear;
-    box-shadow: 0 0 12px rgb(234 179 8 / 0.6);
+.sound-btn:hover::before {
+    transform: translateX(300%);
 }
 
-.progress-thumb {
-    width: 16px;
-    height: 16px;
-    background: white;
-    border: 3px solid rgb(234 179 8);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    border-radius: 50%;
-    top: -5px;
-    transform: translateX(-50%);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    opacity: 0;
+.sound-btn.playing {
+    background-color: rgb(245 158 11 / 0.15);
+    border-color: rgb(245 158 11);
+    box-shadow: 0 0 0 3px rgb(245 158 11 / 0.3);
+    animation: pulse 1.5s infinite;
 }
 
-.progress-container:hover .progress-thumb {
-    opacity: 1;
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
 }
 
-/* Custom Scrollbar */
-.custom-scroll::-webkit-scrollbar {
-    width: 6px;
-}
-.custom-scroll::-webkit-scrollbar-thumb {
-    background: #4b5563;
-    border-radius: 20px;
-}
-.custom-scroll::-webkit-scrollbar-thumb:hover {
-    background: #eab308;
+/* Scene Item */
+.scene-item {
+    transition: all 0.2s ease;
 }
 
-/* Fade transition for audio */
-#audio-player {
-    transition: opacity 0.6s ease-in-out;
+.scene-item.active {
+    background-color: rgb(245 158 11 / 0.1);
+    border-left: 4px solid rgb(245 158 11);
+    color: rgb(245 158 11);
 }
+
+/* Tailwind script already included */

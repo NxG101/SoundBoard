@@ -3,127 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VibeVault • Music Player</title>
+    <title>CLSF Soundboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen">
-    <div class="max-w-5xl mx-auto p-6">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-8">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-yellow-500 rounded-2xl flex items-center justify-center text-zinc-950 text-2xl font-bold title-font">VV</div>
-                <div>
-                    <h1 class="text-3xl font-semibold title-font tracking-tighter">VibeVault</h1>
-                    <p class="text-zinc-500 text-sm">Your personal music archive</p>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen overflow-hidden">
+    <div class="flex h-screen">
+        <!-- Sidebar: Scenes / Categories -->
+        <div class="w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col">
+            <div class="p-6 border-b border-zinc-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 bg-amber-500 rounded-2xl flex items-center justify-center text-zinc-950 text-3xl font-bold shadow-inner">C</div>
+                    <div>
+                        <h1 class="text-3xl font-semibold tracking-tighter title-font">CLSF</h1>
+                        <p class="text-amber-400 text-sm -mt-1">SOUNDBOARD</p>
+                    </div>
                 </div>
+                <p class="text-zinc-500 text-xs mt-4">Professional Audio Control</p>
             </div>
-            
-            <div class="flex items-center gap-4">
+
+            <div class="p-4">
+                <div class="text-xs uppercase tracking-widest text-zinc-500 mb-3 px-3">Scenes</div>
+                <div id="scene-list" class="space-y-1"></div>
+            </div>
+
+            <div class="mt-auto p-4 border-t border-zinc-800">
                 <label id="upload-btn"
-                       class="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-zinc-950 px-5 py-2.5 rounded-2xl font-medium cursor-pointer transition-colors">
+                       class="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 px-6 py-3.5 rounded-3xl font-semibold cursor-pointer transition-all active:scale-95">
                     <i class="fa-solid fa-upload"></i>
-                    <span>Upload MP3s</span>
-                    <input type="file" id="file-input" multiple accept="audio/mp3,audio/mpeg" class="hidden">
+                    <span>Add Sound</span>
+                    <input type="file" id="file-input" multiple accept="audio/mp3,audio/mpeg,audio/wav" class="hidden">
                 </label>
                 
-                <button onclick="clearLibrary()" 
-                        class="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-4 py-2.5 rounded-2xl text-sm transition-colors">
+                <button onclick="clearAll()" 
+                        class="w-full mt-3 flex items-center justify-center gap-2 bg-zinc-800 hover:bg-red-900/30 hover:text-red-400 px-4 py-3 rounded-3xl text-sm transition-colors">
                     <i class="fa-solid fa-trash"></i>
+                    <span>Clear All Sounds</span>
                 </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- Player -->
-            <div class="lg:col-span-7 bg-zinc-900 rounded-3xl p-8 shadow-2xl">
-                <div id="now-playing" class="flex flex-col items-center text-center">
-                    <div id="album-art-container" class="w-64 h-64 bg-zinc-800 rounded-3xl overflow-hidden mb-8 shadow-xl relative">
-                        <img id="album-art" 
-                             src="https://picsum.photos/id/1015/600/600" 
-                             class="album-art w-full h-full object-cover">
-                        <div id="playing-indicator" 
-                             class="absolute inset-0 bg-gradient-to-t from-black/70 flex items-end justify-center pb-6 text-xs tracking-widest opacity-0 transition-opacity">
-                            NOW PLAYING
-                        </div>
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Top Bar -->
+            <div class="h-16 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-lg flex items-center justify-between px-8 z-10">
+                <div class="flex items-center gap-8">
+                    <div id="current-scene-display" class="flex items-center gap-3">
+                        <span class="text-amber-400">
+                            <i class="fa-solid fa-theater-masks"></i>
+                        </span>
+                        <span id="active-scene-name" class="font-semibold text-xl">All Sounds</span>
                     </div>
-                    
-                    <div class="w-full mb-6">
-                        <h2 id="track-title" class="text-2xl font-semibold mb-1">No track selected</h2>
-                        <p id="track-artist" class="text-zinc-400">Upload some music to get started</p>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-3 bg-zinc-800 rounded-3xl px-4 py-1.5">
+                        <i class="fa-solid fa-volume-high text-zinc-400"></i>
+                        <input type="range" id="master-volume" 
+                               min="0" max="1" step="0.01" value="0.85"
+                               class="w-36 accent-amber-500">
                     </div>
-                    
-                    <div class="w-full mb-8">
-                        <div class="flex justify-between text-xs text-zinc-500 mb-2">
-                            <span id="current-time">0:00</span>
-                            <span id="duration">0:00</span>
-                        </div>
-                        <div id="progress-container" class="progress-container relative h-2 bg-zinc-700 rounded-full cursor-pointer">
-                            <div id="progress-bar" class="progress-bar absolute h-full bg-yellow-500 rounded-full"></div>
-                            <div id="progress-thumb" class="progress-thumb absolute w-4 h-4 bg-white rounded-full shadow-lg -top-1.5"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center gap-8">
-                        <button onclick="prevTrack()" 
-                                class="w-12 h-12 flex items-center justify-center text-3xl text-zinc-400 hover:text-white transition-colors">
-                            <i class="fa-solid fa-backward"></i>
-                        </button>
-                        
-                        <button onclick="togglePlay()" id="play-btn"
-                                class="w-16 h-16 bg-yellow-500 hover:bg-yellow-400 text-zinc-950 rounded-2xl flex items-center justify-center text-4xl transition-all active:scale-95">
-                            <i id="play-icon" class="fa-solid fa-play"></i>
-                        </button>
-                        
-                        <button onclick="nextTrack()" 
-                                class="w-12 h-12 flex items-center justify-center text-3xl text-zinc-400 hover:text-white transition-colors">
-                            <i class="fa-solid fa-forward"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="flex items-center gap-3 w-full max-w-xs mt-8">
-                        <i class="fa-solid fa-volume-low text-zinc-400"></i>
-                        <input type="range" id="volume-slider" 
-                               min="0" max="1" step="0.01" value="0.8"
-                               class="w-full accent-yellow-500">
+
+                    <button onclick="stopAllSounds()" 
+                            class="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-5 py-2 rounded-3xl text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-stop"></i>
+                        <span>STOP ALL</span>
+                    </button>
+
+                    <div class="text-xs text-zinc-500 flex items-center gap-2">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        LIVE
                     </div>
                 </div>
             </div>
 
-            <!-- Playlist -->
-            <div class="lg:col-span-5 bg-zinc-900 rounded-3xl p-6 flex flex-col">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-semibold flex items-center gap-2">
-                        <i class="fa-solid fa-list"></i>
-                        Library
-                    </h3>
-                    <span id="track-count" class="text-xs bg-zinc-800 px-3 py-1 rounded-full text-zinc-400">0 tracks</span>
+            <!-- Sound Grid -->
+            <div class="flex-1 p-8 overflow-auto" id="sound-grid">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Footer Status -->
+            <div class="h-14 border-t border-zinc-800 bg-zinc-900 px-8 flex items-center justify-between text-xs text-zinc-500">
+                <div id="status" class="flex items-center gap-2">
+                    <span>Ready • 0 sounds loaded</span>
                 </div>
-                
-                <div id="playlist" class="flex-1 overflow-y-auto space-y-1 pr-2 custom-scroll">
-                    <!-- Populated by JS -->
-                </div>
-                
-                <div class="mt-6">
+                <div class="flex items-center gap-6">
                     <input id="search-input" 
                            type="text" 
-                           placeholder="Search tracks..." 
-                           onkeyup="filterPlaylist()"
-                           class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl py-3 px-5 text-sm focus:outline-none focus:border-yellow-500">
+                           placeholder="Search sounds..." 
+                           onkeyup="filterSounds()"
+                           class="bg-zinc-800 border border-zinc-700 focus:border-amber-500 rounded-3xl py-2 px-6 text-sm w-80 focus:outline-none">
+                    <div onclick="showLibraryModal()" class="cursor-pointer hover:text-amber-400 transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-list"></i>
+                        <span>Library</span>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="text-center mt-8 text-zinc-500 text-xs flex items-center justify-center gap-2">
-            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            All music stays in your browser • No data is uploaded
         </div>
     </div>
 
-    <audio id="audio-player-1" class="hidden"></audio>
-    <audio id="audio-player-2" class="hidden"></audio>
+    <!-- Library Modal -->
+    <div id="library-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-zinc-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-zinc-700 flex items-center justify-between">
+                <h2 class="text-2xl font-semibold">Sound Library</h2>
+                <button onclick="hideLibraryModal()" class="text-3xl leading-none hover:text-amber-400">×</button>
+            </div>
+            <div class="flex-1 overflow-auto p-6" id="library-content">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
 
+    <audio id="global-audio" class="hidden"></audio>
     <script src="script.js"></script>
 </body>
 </html>
