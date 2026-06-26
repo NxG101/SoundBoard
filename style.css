@@ -1,58 +1,564 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
 
 :root {
-    --primary: 245 158 11;
+    --primary: 234 179 8;
 }
 
 body {
-    font-family: 'Inter', system_ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
 }
 
 .title-font {
     font-family: 'Space Grotesk', sans-serif;
 }
 
-/* Sound Button */
-.sound-btn {
+.album-art {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.playing .album-art {
+    animation: rotate 25s linear infinite;
+    box-shadow: 0 0 60px -10px rgb(234 179 8);
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.track-item {
     transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.track-item:hover {
+    background-color: #1f2937;
+    transform: translateX(8px);
+}
+
+.active-track {
+    background-color: #374151;
+    border-left: 4px solid rgb(234 179 8);
+}
+
+/* Progress Bar */
+.progress-container {
+    height: 6px;
+    background: #4b5563;
+    border-radius: 9999px;
     position: relative;
+    transition: height 0.2s ease;
+}
+
+.progress-container:hover {
+    height: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, rgb(234 179 8), #facc15);
+    border-radius: 9999px;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 12px rgb(234 179 8 / 0.6);
+}
+
+.progress-thumb {
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 3px solid rgb(234 179 8);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    border-radius: 50%;
+    top: -5px;
+    transform: translateX(-50%);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    opacity: 0;
+}
+
+.progress-container:hover .progress-thumb {
+    opacity: 1;
+}
+
+/* Custom Scrollbar */
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 20px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: #eab308;
+}
+
+.track-item[draggable="true"] {
+    cursor: grab;
+}
+
+.track-item:active {
+    cursor: grabbing;
+}
+
+.track-item.dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+}
+
+/* ===== SCENES PANEL ===== */
+
+.scene-card {
+    background-color: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 20px;
+    padding: 14px;
+    transition: border-color 0.2s ease;
+}
+
+.scene-card:hover {
+    border-color: #52525b;
+}
+
+.scene-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.scene-number {
+    width: 22px;
+    height: 22px;
+    background: #eab308;
+    color: #18181b;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.scene-title-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #f4f4f5;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    min-width: 0;
+}
+
+.scene-title-input:hover {
+    background: #27272a;
+}
+
+.scene-title-input:focus {
+    background: #27272a;
+}
+
+.scene-add-act-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #18181b;
+    background: #eab308;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.scene-add-act-btn:hover {
+    background: #facc15;
+}
+
+.scene-delete-btn {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    color: #71717a;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.scene-delete-btn:hover {
+    background: #3f3f46;
+    color: #ef4444;
+}
+
+/* ===== ACTS (nested inside a Scene) ===== */
+
+.scene-acts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.act-card {
+    background: #0f0f11;
+    border: 1px solid #27272a;
+    border-radius: 14px;
+    padding: 10px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.act-card.drag-over {
+    border-color: #eab308;
+    background-color: rgba(234, 179, 8, 0.06);
+}
+
+.act-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.act-number {
+    width: 18px;
+    height: 18px;
+    background: #3f3f46;
+    color: #d4d4d8;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.act-title-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #d4d4d8;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    min-width: 0;
+}
+
+.act-title-input:hover,
+.act-title-input:focus {
+    background: #1f1f23;
+}
+
+.act-delete-btn {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    color: #52525b;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    flex-shrink: 0;
+    font-size: 10px;
+}
+
+.act-delete-btn:hover {
+    background: #3f3f46;
+    color: #ef4444;
+}
+
+.act-tracks {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 44px;
+}
+
+.act-empty-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    color: #3f3f46;
+    font-size: 11px;
+    text-align: center;
+}
+
+/* Tracks inside an Act */
+.scene-track-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: #27272a;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: grab;
+}
+
+.scene-track-item:hover {
+    background: #3f3f46;
+}
+
+.scene-track-item:active {
+    cursor: grabbing;
+}
+
+.scene-track-item.dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+}
+
+.scene-track-name {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
+    color: #e4e4e7;
 }
 
-.sound-btn::before {
-    content: '';
+.scene-track-duration {
+    font-size: 11px;
+    color: #71717a;
+    flex-shrink: 0;
+}
+
+.scene-track-play-btn {
+    width: 24px;
+    height: 24px;
+    background: #eab308;
+    color: #18181b;
+    border: none;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+
+.scene-track-play-btn:hover {
+    background: #facc15;
+}
+
+.scene-track-remove-btn {
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    color: #52525b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.scene-track-remove-btn:hover {
+    background: #3f3f46;
+    color: #ef4444;
+}
+
+.scene-drop-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    border: 1.5px dashed #3f3f46;
+    border-radius: 12px;
+    color: #52525b;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.act-card.drag-over .scene-drop-hint {
+    border-color: #eab308;
+    color: #eab308;
+}
+
+/* Empty scenes state */
+.scenes-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #52525b;
+    text-align: center;
+    gap: 8px;
+}
+
+.scenes-empty i {
+    font-size: 36px;
+    opacity: 0.3;
+}
+
+.scenes-empty p {
+    font-size: 13px;
+}
+
+.scenes-empty span {
+    font-size: 11px;
+    color: #3f3f46;
+}
+
+/* ===== MUSIC EDITOR PANEL ===== */
+
+#editor-track-range {
+    user-select: none;
+}
+
+.editor-handle {
+    z-index: 2;
+    transition: background 0.15s;
+}
+
+.editor-handle:hover,
+.editor-handle.active-handle {
+    background: #facc15;
+}
+
+#editor-range-fill {
+    z-index: 1;
+}
+
+.editor-playhead {
+    z-index: 3;
+    pointer-events: none;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+    transition: left 0.05s linear;
+}
+
+.editor-playhead-time {
     position: absolute;
-    inset: 0;
-    background: linear-gradient(45deg, transparent, rgba(245, 158, 11, 0.15), transparent);
-    transform: translateX(-150%);
-    transition: transform 0.6s;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fafafa;
+    color: #18181b;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'Space Grotesk', sans-serif;
+    padding: 2px 6px;
+    border-radius: 6px;
+    white-space: nowrap;
 }
 
-.sound-btn:hover::before {
-    transform: translateX(300%);
-}
-
-.sound-btn.playing {
-    background-color: rgb(245 158 11 / 0.15);
-    border-color: rgb(245 158 11);
-    box-shadow: 0 0 0 3px rgb(245 158 11 / 0.3);
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.02); }
-}
-
-/* Scene Item */
-.scene-item {
+.editor-clip-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 14px;
+    cursor: grab;
     transition: all 0.2s ease;
 }
 
-.scene-item.active {
-    background-color: rgb(245 158 11 / 0.1);
-    border-left: 4px solid rgb(245 158 11);
-    color: rgb(245 158 11);
+.editor-clip-card:hover {
+    border-color: #eab308;
+    background-color: rgba(234, 179, 8, 0.06);
 }
 
-/* Tailwind script already included */
+.editor-clip-card:active {
+    cursor: grabbing;
+}
+
+.editor-clip-card.dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+}
+
+.editor-clip-icon {
+    width: 28px;
+    height: 28px;
+    background: #27272a;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #eab308;
+    font-size: 11px;
+}
+
+.editor-clip-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.editor-clip-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #f4f4f5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.editor-clip-meta {
+    font-size: 10px;
+    color: #71717a;
+}
+
+.editor-clip-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.editor-clip-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: #71717a;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.editor-clip-btn:hover {
+    background: #3f3f46;
+    color: #eab308;
+}
+
+.editor-clip-btn.remove-clip:hover {
+    color: #ef4444;
+}
